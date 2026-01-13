@@ -166,26 +166,20 @@ class MultiHeadAttention(nn.Module):
 
 
 class FeedForward(nn.Module):
-    """
-    Feed-forward network (MLP) module.
-    
-    Standard two-layer MLP with GELU activation.
-    """
-    
     def __init__(self, config: ChessConfig):
         super().__init__()
-        
-        self.c_fc = nn.Linear(config.n_embd, config.n_inner)
-        self.c_proj = nn.Linear(config.n_inner, config.n_embd)
-        self.dropout = nn.Dropout(config.dropout)
-    
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.c_fc(x)
-        x = F.gelu(x)
-        x = self.c_proj(x)
-        x = self.dropout(x)
-        return x
+        d = config.n_embd
+        h = config.n_inner//2
 
+        self.w_up = nn.Linear(d, h, bias=True)
+        self.w_gate = nn.Linear(d, h, bias=True)
+        self.w_down = nn.Linear(h, d, bias=True)
+        self.dropout = nn.Dropout(config.dropout)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.w_up(x) * F.silu(self.w_gate(x))
+        x = self.w_down(x)
+        return self.dropout(x)
 
 class TransformerBlock(nn.Module):
     """
@@ -359,7 +353,7 @@ class ChessForCausalLM(PreTrainedModel):
             shift_labels = labels[..., 1:].contiguous()
             
             # Flatten for cross-entropy
-            loss_fct = nn.CrossEntropyLoss(ignore_index=self.config.pad_token_id)
+            loss_fct = nn.CrossEntropyLoss(ignore_index=-100)
             loss = loss_fct(
                 shift_logits.view(-1, shift_logits.size(-1)),
                 shift_labels.view(-1),

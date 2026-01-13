@@ -36,11 +36,11 @@ def parse_args():
         help="Vocabulary size"
     )
     parser.add_argument(
-        "--n_embd", type=int, default=128,
+        "--n_embd", type=int, default=96,
         help="Embedding dimension"
     )
     parser.add_argument(
-        "--n_layer", type=int, default=4,
+        "--n_layer", type=int, default=6,
         help="Number of transformer layers"
     )
     parser.add_argument(
@@ -144,7 +144,7 @@ def main():
     print("\nBuilding tokenizer from dataset...")
     tokenizer = ChessTokenizer.build_vocab_from_dataset(
         dataset_name=args.dataset_name,
-        min_frequency=500,  # Only keep moves that appear at least 500 times
+        min_frequency=137,  # Only keep moves that appear at least 500 times 104
         max_samples=100000,  # Use 100k games to build vocabulary
     )
     print(f"   Vocabulary size: {tokenizer.vocab_size}")
